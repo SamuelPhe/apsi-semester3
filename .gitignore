@@ -1,11 +1,26 @@
-# Local configuration and generated files
+# Local environment and secrets
 .env
 .env.*
+!.env.example
+apsib/.env
+apsib/.env.*
+!apsib/.env.example
+
+# Logs and generated files
 *.log
+.DS_Store
+Thumbs.db
+
+# Dependencies and build output
 /vendor/
 /node_modules/
 /target/
 *.class
 *.jar
-.DS_Store
-Thumbs.db
+
+# User uploads and generated profile pictures
+/apsib/uploads/*
+!/apsib/uploads/.htaccess
+!/apsib/uploads/.gitkeep
+/apsib/img/profile_*
+/apsib/img/user_*
