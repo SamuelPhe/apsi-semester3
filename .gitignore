@@ -1,0 +1,11 @@
+# Local configuration and generated files
+.env
+.env.*
+*.log
+/vendor/
+/node_modules/
+/target/
+*.class
+*.jar
+.DS_Store
+Thumbs.db
