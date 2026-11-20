@@ -34,7 +34,7 @@ jobs:
                   f"first_16_bytes_repr: {head[:16]!r}",
               ]
               sig = head[:8]
-              if head.startswith(b"PK\\x03\\x04") or head.startswith(b"PK\\x05\\x06") or head.startswith(b"PK\\x07\\x08"):
+              if head[:4] == bytes([0x50, 0x4b, 0x03, 0x04]) or head[:4] == bytes([0x50, 0x4b, 0x05, 0x06]) or head[:4] == bytes([0x50, 0x4b, 0x07, 0x08]):
                   report.append("detected_format: ZIP container (could be ZIP/JAR/DOCX/XLSX/PPTX)")
                   try:
                       with zipfile.ZipFile(p) as z:
