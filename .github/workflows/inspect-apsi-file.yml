@@ -1,0 +1,77 @@
+name: Inspect APSI binary (temporary)
+on:
+  push:
+    branches:
+      - inspect-apsi-file
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Inspect file format and archive structure
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, tarfile, hashlib
+          p = Path("apsi final 23012026")
+          out = Path("apsi-inspection")
+          out.mkdir(exist_ok=True)
+          report = []
+          if not p.exists():
+              report.append("FILE_NOT_FOUND")
+          else:
+              with p.open("rb") as f:
+                  head = f.read(64)
+              report += [
+                  f"name: {p.name}",
+                  f"size_bytes: {p.stat().st_size}",
+                  f"sha256: {hashlib.sha256(p.read_bytes()).hexdigest()}",
+                  f"first_64_bytes_hex: {head.hex(' ')}",
+                  f"first_16_bytes_repr: {head[:16]!r}",
+              ]
+              sig = head[:8]
+              if head.startswith(b"PK\\x03\\x04") or head.startswith(b"PK\\x05\\x06") or head.startswith(b"PK\\x07\\x08"):
+                  report.append("detected_format: ZIP container (could be ZIP/JAR/DOCX/XLSX/PPTX)")
+                  try:
+                      with zipfile.ZipFile(p) as z:
+                          infos = z.infolist()
+                          report.append(f"archive_entries: {len(infos)}")
+                          total = sum(i.file_size for i in infos)
+                          report.append(f"archive_uncompressed_bytes: {total}")
+                          report.append("entries (up to 500):")
+                          for i in infos[:500]:
+                              report.append(f"{i.file_size:>12}  {i.filename}")
+                  except Exception as e:
+                      report.append(f"zip_error: {type(e).__name__}: {e}")
+              elif head.startswith(b"%PDF-"):
+                  report.append("detected_format: PDF")
+              elif head.startswith(b"Rar!"):
+                  report.append("detected_format: RAR archive")
+              elif head.startswith(b"7z\\xbc\\xaf\\x27\\x1c"):
+                  report.append("detected_format: 7z archive")
+              elif head.startswith(b"SQLite format 3"):
+                  report.append("detected_format: SQLite database")
+              elif head.startswith(b"\\xd0\\xcf\\x11\\xe0\\xa1\\xb1\\x1a\\xe1"):
+                  report.append("detected_format: OLE compound document (legacy Office format possible)")
+              elif head.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+                  report.append("detected_format: PNG image")
+              elif head.startswith(b"\\xff\\xd8\\xff"):
+                  report.append("detected_format: JPEG image")
+              elif head.startswith(b"MZ"):
+                  report.append("detected_format: Windows executable")
+              else:
+                  report.append("detected_format: unknown / raw data")
+          (out / "report.txt").write_text("\\n".join(report), encoding="utf-8")
+          print("\\n".join(report[:30]))
+          PY
+      - name: Upload inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: apsi-file-inspection
+          path: apsi-inspection/report.txt
+          if-no-files-found: error
+          retention-days: 2
