@@ -9,83 +9,76 @@ jobs:
   extract:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Extract clean source and apply minimal fixes
+      - name: Extract clean project files
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import zipfile, re
 
-          archive = Path("apsi final 23012026")
+          archive = Path('apsi final 23012026')
           if not archive.exists():
-              raise SystemExit("Original APSI archive is missing")
+              raise SystemExit('Original archive missing')
+
           with zipfile.ZipFile(archive) as z:
               for info in z.infolist():
                   name = info.filename
-                  if not name.startswith("apsib/") or name.endswith("/"):
+                  if not name.startswith('apsib/') or name.endswith('/'):
                       continue
-                  rel = Path(name).relative_to("apsib")
+                  rel = Path(name).relative_to('apsib')
                   parts = rel.parts
-                  if any(part.lower() == "uploads" for part in parts):
+                  if any(part.lower() == 'uploads' for part in parts):
                       continue
-                  if rel.suffix.lower() == ".sql":
+                  if rel.suffix.lower() in {'.sql', '.scss'}:
                       continue
-                  if len(parts) >= 2 and parts[0].lower() == "img":
-                      allowed_images = {
-                          "logov1.png", "logov2.png", "logo_edusched.png",
-                          "profile.png", "user.jpg", "favicon.ico",
-                          "testimonial-1.jpg", "testimonial-2.jpg"
+                  if parts and parts[0].lower() == 'img':
+                      allowed = {
+                          'logov1.png', 'logov2.png', 'logo_edusched.png',
+                          'profile.png', 'user.jpg', 'favicon.ico',
+                          'testimonial-1.jpg', 'testimonial-2.jpg'
                       }
-                      if parts[-1].lower() not in allowed_images:
+                      if parts[-1].lower() not in allowed:
                           continue
-                  if rel.suffix.lower() == ".scss":
-                      continue
-                  target = Path("apsib") / rel
+                  target = Path('apsib') / rel
                   target.parent.mkdir(parents=True, exist_ok=True)
                   target.write_bytes(z.read(info))
 
-              sql_name = "apsib/edusched fix 2.sql"
+              sql_name = 'apsib/edusched fix 2.sql'
               if sql_name in z.namelist():
-                  sql_text = z.read(sql_name).decode("utf-8", "replace")
+                  sql_text = z.read(sql_name).decode('utf-8', 'replace')
                   ddl = re.findall(
-                      r"(?:CREATE TABLE|CREATE DATABASE|ALTER TABLE).*?;",
+                      r'(?:CREATE TABLE|CREATE DATABASE|ALTER TABLE).*?;',
                       sql_text,
                       flags=re.I | re.S
                   )
-                  db_dir = Path("apsib/database")
-                  db_dir.mkdir(parents=True, exist_ok=True)
-                  (db_dir / "schema.sql").write_text(
-                      "-- Sanitized schema only. Original INSERT/data rows are intentionally excluded.\n\n"
-                      + "\n\n".join(ddl),
-                      encoding="utf-8"
+                  database_dir = Path('apsib/database')
+                  database_dir.mkdir(parents=True, exist_ok=True)
+                  (database_dir / 'schema.sql').write_text(
+                      '-- Schema only. Original data rows are excluded.\n\n'
+                      + '\n\n'.join(ddl),
+                      encoding='utf-8'
                   )
 
-          # Safe database configuration via a local .env file.
-          (Path("apsib/.env.example")).write_text(
-              "DB_HOST=127.0.0.1\nDB_PORT=3306\nDB_NAME=edusched\nDB_USER=root\nDB_PASSWORD=\n",
-              encoding="utf-8"
+          (Path('apsib/.env.example')).write_text(
+              'DB_HOST=127.0.0.1\nDB_PORT=3306\nDB_NAME=edusched\nDB_USER=root\nDB_PASSWORD=\n',
+              encoding='utf-8'
           )
 
-          (Path("apsib/koneksi.php")).write_text("""<?php
+          (Path('apsib/koneksi.php')).write_text("""<?php
           declare(strict_types=1);
 
-          // Load simple KEY=VALUE settings from .env without requiring a package.
+          // Read local database settings from .env when available.
           $envFile = __DIR__ . '/.env';
           if (is_readable($envFile)) {
-              foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-                  $line = trim($line);
-                  if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
-                      continue;
-                  }
-                  [$key, $value] = explode('=', $line, 2);
-                  $key = trim($key);
-                  $value = trim(trim($value), "\\\"'");
-                  if ($key !== '' && getenv($key) === false) {
-                      putenv($key . '=' . $value);
+              $settings = parse_ini_file($envFile, false, INI_SCANNER_RAW);
+              if (is_array($settings)) {
+                  foreach ($settings as $key => $value) {
+                      if (getenv($key) === false) {
+                          putenv($key . '=' . (string) $value);
+                      }
                   }
               }
           }
@@ -117,9 +110,9 @@ jobs:
               http_response_code(500);
               exit('Koneksi database gagal disiapkan.');
           }
-          """, encoding="utf-8")
+          """, encoding='utf-8')
 
-          (Path("apsib/auth_guard.php")).write_text("""<?php
+          (Path('apsib/auth_guard.php')).write_text("""<?php
           if (session_status() === PHP_SESSION_NONE) {
               session_start();
           }
@@ -152,10 +145,10 @@ jobs:
                   }
               }
           }
-          """, encoding="utf-8")
+          """, encoding='utf-8')
 
-          index = Path("apsib/index.php")
-          index_text = index.read_text(encoding="utf-8")
+          index_file = Path('apsib/index.php')
+          index = index_file.read_text(encoding='utf-8')
           old_prefix = "<?php\nsession_start();\ninclude 'koneksi.php';"
           new_prefix = """<?php
           if (session_status() === PHP_SESSION_NONE) {
@@ -164,53 +157,39 @@ jobs:
           require_once __DIR__ . '/auth_guard.php';
           requireLogin();
           require_once __DIR__ . '/koneksi.php';"""
-          if old_prefix in index_text:
-              index_text = index_text.replace(old_prefix, new_prefix, 1)
-          index.write_text(index_text, encoding="utf-8")
+          if old_prefix in index:
+              index = index.replace(old_prefix, new_prefix, 1)
+          index_file.write_text(index, encoding='utf-8')
 
-          # Fix a data-loss bug: editing/resetting a schedule cell must not remove its uploaded file.
-          # Also correct the invalid SQL assignment in reset mode.
-          cell = Path("apsib/schedule_update_cell.php")
-          if cell.exists():
-              cell_text = cell.read_text(encoding="utf-8")
-              cell_text = cell_text.replace(
-                  "user_id = NOT NULL",
-                  "user_id = ?"
-              )
-              cell_text = cell_text.replace(
+          # Editing or resetting a schedule cell must not delete its attached file.
+          cell_file = Path('apsib/schedule_update_cell.php')
+          if cell_file.exists():
+              cell = cell_file.read_text(encoding='utf-8')
+              cell = cell.replace('user_id = NOT NULL', 'user_id = ?')
+              cell = cell.replace(
                   "mysqli_stmt_bind_param($stmt, 'sss', $sekolah, $kelas, $mapel);",
                   "mysqli_stmt_bind_param($stmt, 'ssss', $pic, $sekolah, $kelas, $mapel);",
                   1
               )
-              marker = "// ambil id_jadwal"
-              if marker in cell_text:
-                  cell_text = cell_text.split(marker, 1)[0]
-              cell.write_text(cell_text.rstrip() + "\n", encoding="utf-8")
+              if '// ambil id_jadwal' in cell:
+                  cell = cell.split('// ambil id_jadwal', 1)[0]
+              cell_file.write_text(cell.rstrip() + '\n', encoding='utf-8')
 
-          # Keep uploaded documents and user-specific profile photos out of the source repository.
-          uploads = Path("apsib/uploads")
+          uploads = Path('apsib/uploads')
           uploads.mkdir(parents=True, exist_ok=True)
-          (uploads / ".htaccess").write_text(
-              "Options -Indexes\n"
-              "<FilesMatch \\"\\.(php[0-9]?|phtml|phar|cgi|pl|py|sh)$\\">\n"
-              "  Require all denied\n"
-              "</FilesMatch>\n",
-              encoding="utf-8"
+          (uploads / '.htaccess').write_text(
+              r'Options -Indexes\n<FilesMatch "\\.(php[0-9]?|phtml|phar|cgi|pl|py|sh)$">\n  Require all denied\n</FilesMatch>\n',
+              encoding='utf-8'
           )
-          (uploads / ".gitkeep").write_text("", encoding="utf-8")
+          (uploads / '.gitkeep').write_text('', encoding='utf-8')
 
-          # Rename the opaque archive to its actual format; retain it for reference.
-          Path("apsi final 23012026").rename("apsi-project-source-archive.zip")
-
-          # Remove this temporary workflow so the portfolio repo stays clean.
-          temporary_workflow = Path(".github/workflows/rebuild-apsi-source.yml")
-          if temporary_workflow.exists():
-              temporary_workflow.unlink()
+          archive.rename('apsi-project-source-archive.zip')
+          Path('.github/workflows/rebuild-apsi-source.yml').unlink()
           PY
       - name: Commit extracted source
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m "Expose APSI project source files"
+          git commit -m 'Expose APSI project source files'
           git push
