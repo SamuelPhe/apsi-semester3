@@ -4,7 +4,6 @@ EduSched is a web-based application developed for an **Information Systems Analy
 
 > **Project type:** Web application  
 > **Project context:** Academic project — Semester 3  
-> **Public showcase:** [EduSched-Showcase](https://github.com/SamuelPhe/EduSched-Showcase)
 
 ## 1. Application preview
 
