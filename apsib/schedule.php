@@ -945,6 +945,7 @@ function saveCellModal() {
       sekolah: cellSekolah.value,
       kelas: cellKelas.value,
       mapel: cellMapel.value,
+      id_jadwal: cellId.value,
       tanggal: tanggal,
       status: status,
       detail: cellDetail.value
