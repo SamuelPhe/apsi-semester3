@@ -976,6 +976,8 @@ function saveCellModal() {
       throw new Error(result.message || 'Data jadwal gagal disimpan.');
     }
 
+    activeCell.dataset.id = result.id_jadwal || cellId.value;
+    cellId.value = activeCell.dataset.id;
     activeCell.dataset.tanggal = tanggal;
     activeCell.dataset.status = status;
     activeCell.dataset.detail = cellDetail.value;
