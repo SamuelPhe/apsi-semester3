@@ -1,57 +1,96 @@
-# EduSched — Sistem Informasi Penjadwalan Ulangan
+# EduSched — School Exam Scheduling System
 
-Proyek ini dikembangkan sebagai tugas mata kuliah **Analisis dan Perancangan Sistem Informasi (APSI), Semester 3**. EduSched merupakan aplikasi web untuk membantu pengelolaan jadwal ulangan dan berkas soal pada lingkungan sekolah atau bimbingan belajar.
+EduSched is a web-based application developed for an **Information Systems Analysis and Design (APSI), Semester 3** course project. It is designed to help schools or tutoring organizations organize exam schedules, coordinate teacher activity, and manage question files associated with each schedule.
 
-## Fitur utama
+> **Project type:** Web application  
+> **Project context:** Academic project — Semester 3  
+> **Public showcase:** [EduSched-Showcase](https://github.com/SamuelPhe/EduSched-Showcase)
 
-- Login dengan dua peran pengguna: **admin** dan **guru**.
-- Pengelolaan jadwal berdasarkan sekolah, kelas, dan mata pelajaran.
-- Pengaturan tanggal, deskripsi, dan status pekerjaan ulangan.
-- Unggah serta pengelolaan berkas soal yang dikaitkan dengan jadwal.
-- Riwayat perubahan dan aktivitas pengguna.
-- Rekap aktivitas bulanan serta ekspor laporan PDF untuk admin.
-- Pengelolaan akun pengguna oleh admin.
+## 1. Application preview
 
-## Teknologi
+Full application screenshots are not currently included in this repository. The existing image assets are branding and template resources, not verified screenshots of the running application.
 
-- PHP native dengan MySQLi
-- MySQL
-- HTML, CSS, JavaScript, dan Bootstrap
-- Dompdf untuk pembuatan laporan PDF
+Suggested screenshots to add:
+- Login screen
+- Administrator schedule management
+- Teacher schedule and task view
+- Activity history and PDF report
 
-## Struktur repository
+Use sample school, teacher, class, and schedule data. Do not upload real exam papers, student information, or private profile images.
 
-- `apsib/` — source code dan aset aplikasi.
-- `apsib/database/schema.sql` — struktur tabel database tanpa data pengguna.
-- `apsib/.env.example` — contoh konfigurasi database.
-- `apsib/dompdf/` dan `apsib/lib/` — pustaka pendukung yang digunakan aplikasi.
+## 2. Main features
 
-Data hasil unggahan dan foto profil pribadi tidak disertakan dalam source tree. Dump SQL yang berisi data akun atau data pengguna juga tidak dipublikasikan; hanya struktur tabel yang disertakan.
+- Login with **administrator** and **teacher** roles
+- Exam schedule management by school, class, and subject
+- Schedule dates, descriptions, and work-status tracking
+- Question-file uploads associated with schedules
+- User account management
+- Activity history and change tracking
+- Monthly activity summaries and PDF report export
 
-## Menjalankan secara lokal
+## 3. Technology stack
 
-1. Siapkan PHP dengan ekstensi **mysqli** dan **fileinfo**, serta MySQL atau MariaDB.
-2. Buat database bernama `edusched`, lalu impor `apsib/database/schema.sql`.
-3. Salin `apsib/.env.example` menjadi `apsib/.env`, kemudian sesuaikan host, port, nama database, username, dan password MySQL.
-4. Pastikan folder `apsib/uploads/` dan `apsib/img/` dapat ditulisi oleh web server. Folder upload sudah diberi aturan Apache untuk menolak eksekusi file skrip.
-5. Jalankan server pengembangan dari folder repository:
+- PHP (native)
+- MySQL / MariaDB
+- MySQLi
+- HTML, CSS, and JavaScript
+- Bootstrap
+- Dompdf for PDF generation
+
+## 4. Architecture overview
+
+EduSched uses a page-oriented PHP application structure. Browser requests are handled by PHP pages and action scripts. The application connects to MySQL through a shared MySQLi connection, stores schedule and user records in the database, handles question-file uploads on the server, and uses Dompdf for PDF reports.
+
+```mermaid
+flowchart TD
+    U[Administrator or Teacher] --> UI[Browser Interface]
+    UI --> PHP[PHP Pages and Action Scripts]
+    PHP --> AUTH[Authentication and Role Guard]
+    PHP --> DBL[Shared MySQLi Connection]
+    DBL --> DB[(MySQL / MariaDB)]
+    PHP --> FS[Server File Storage]
+    PHP --> PDF[Dompdf Report Generator]
+    PDF --> OUT[PDF Report]
+```
+
+## 5. Demo and local setup
+
+There is currently **no publicly hosted demo**. The application can be explored locally after preparing PHP and the database.
+
+1. Install PHP with the `mysqli` and `fileinfo` extensions, plus MySQL or MariaDB.
+2. Create a database named `edusched`.
+3. Import [apsib/database/schema.sql](apsib/database/schema.sql).
+4. Configure the database settings used by `apsib/koneksi.php` through environment variables or a local `apsib/.env` file:
+   - `DB_HOST` (default: `127.0.0.1`)
+   - `DB_PORT` (default: `3306`)
+   - `DB_NAME` (default: `edusched`)
+   - `DB_USER`
+   - `DB_PASSWORD`
+5. Start the PHP development server from the repository root:
 
    ```bash
    php -S 127.0.0.1:8000 -t apsib
    ```
 
-6. Buka `http://127.0.0.1:8000/login.php`.
+6. Open `http://127.0.0.1:8000/login.php`.
 
-Database yang disertakan hanya berisi struktur tabel. **Belum ada akun demo**. Buat akun admin pertama secara manual setelah database dibuat. Hash password dapat dibuat melalui PHP:
+The schema file contains table structure rather than real user data. Create a local administrator account before testing. No public demo credentials are provided.
 
-```bash
-php -r "echo password_hash('GANTI_DENGAN_PASSWORD_SENDIRI', PASSWORD_DEFAULT), PHP_EOL;"
-```
+## 6. Project structure
 
-Gunakan hasil hash tersebut saat menambahkan satu baris admin ke tabel `users`. Jangan menggunakan password contoh di atas sebagai password akun sebenarnya.
+- `apsib/` — PHP application pages, scripts, styles, and assets
+- `apsib/koneksi.php` — MySQLi database connection
+- `apsib/auth_guard.php` — authenticated access and role checks
+- `apsib/database/schema.sql` — database structure
+- `apsib/dompdf/` — PDF generation library
+- `apsib/lib/` — frontend libraries and assets
 
-## Status dan batasan
+## 7. Copyright and license
 
-Source code sudah dipisahkan dari arsip awal agar setiap file dapat dibaca langsung di GitHub. Pemeriksaan sintaks PHP dapat dijalankan melalui workflow repository.
+Copyright (c) 2026 Samuel Phe. All rights reserved.
 
-Proyek ini masih merupakan **proyek akademik/portofolio**, bukan aplikasi yang siap dipasang di server publik. Sebelum digunakan untuk data nyata, masih perlu dilakukan pengujian integrasi dengan database, penguatan validasi unggahan file, perlindungan CSRF untuk seluruh aksi yang mengubah data, dan peninjauan query SQL di semua modul. Belum ada demo aplikasi yang di-host secara publik.
+Original project code, documentation, and assets authored for EduSched are proprietary. No permission is granted to copy, modify, redistribute, sublicense, or reuse these materials without prior written permission. Bundled third-party libraries, including Dompdf and frontend packages, remain subject to their own licenses and notices. See the [LICENSE](LICENSE) file.
+
+---
+
+This is an academic portfolio project, not a production-ready school information system. Integration testing, comprehensive upload validation, CSRF coverage, and further SQL/security review are still required before use with real school data.
