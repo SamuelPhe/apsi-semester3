@@ -19,6 +19,8 @@ The schema contains table definitions only; it does not contain a user account. 
 
 Keep port `8080` **Private**. Do not upload real students' information, exam materials, or personal profile data.
 
+If this Codespace was created before the web service/port was added or updated, open the Command Palette and run **Codespaces: Rebuild Container**. This applies the current Compose configuration; it does not require deleting the Codespace or its named database volume.
+
 ## Stop and resume
 
 Stop the Codespace when finished. When resumed, the web and database services start again. MariaDB data remains in its named volume while the Codespace and volume are retained.
