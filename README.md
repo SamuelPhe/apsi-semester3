@@ -87,10 +87,16 @@ The schema file contains table structure rather than real user data. Create a lo
 
 ## 7. Copyright and license
 
-Copyright (c) 2026 Samuel Phe. All rights reserved.
+This is a collaborative academic project developed by the following team members:
 
-Original project code, documentation, and assets authored for EduSched are proprietary. No permission is granted to copy, modify, redistribute, sublicense, or reuse these materials without prior written permission. Bundled third-party libraries, including Dompdf and frontend packages, remain subject to their own licenses and notices. See the [LICENSE](LICENSE) file.
+- Davent Gravando
+- Marsha Marthalina
+- Samuel
+- Wendy Lo
 
+This attribution recognizes the project team and does not claim that the entire project or every contribution is solely owned by Samuel Phe. Ownership and rights in jointly created materials and individual contributions remain with the respective authors or rightsholders, subject to any applicable team, course, institutional, or other agreements.
+
+No open-source license is granted by this repository for project materials created by the team. Permission to copy, modify, redistribute, sublicense, or reuse team-created materials should be obtained from the relevant rightsholders. Dompdf and other bundled third-party libraries remain subject to their own licenses and notices. See the [LICENSE](LICENSE) file.
 ---
 
 This is an academic portfolio project, not a production-ready school information system. Integration testing, comprehensive upload validation, CSRF coverage, and further SQL/security review are still required before use with real school data.
