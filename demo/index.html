@@ -14,6 +14,35 @@ main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var
 @media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{padding:14px;gap:14px}.brand{padding:0}.nav{grid-template-columns:repeat(3,minmax(0,1fr))}.nav-label,.side-note{display:none}.nav button{justify-content:center;padding:10px 6px;font-size:11px}.nav button .ico{display:none}.topbar{padding:0 18px}.content{padding:22px 18px}.grid{grid-template-columns:repeat(2,1fr)}.calendar{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.topbar{height:auto;padding:13px 14px;flex-wrap:wrap}.top-actions{width:100%;justify-content:space-between}.content{padding:18px 13px}.page-head{display:block}.page-head .btn{margin-top:14px}.grid{gap:9px}.stat{padding:13px}.stat strong{font-size:21px}.panel{padding:14px}.form-grid{grid-template-columns:1fr}.form-item.full{grid-column:auto}.nav{grid-template-columns:repeat(3,1fr)}}
 </style>
+<style>
+
+/* Visual alignment with the original EduSched PHP application */
+body{background:#fff;color:#191c24;font-family:Arial,"Segoe UI",sans-serif}
+.shell{grid-template-columns:250px minmax(0,1fr);background:#fff}
+.sidebar{background:#f3f6f9;color:#191c24;padding:22px 0;gap:20px;border-right:1px solid #e3e8ed}
+.brand{padding:0 20px 18px;border-bottom:1px solid #e2e7ec}
+.brand-mark{background:#fff;color:#009cff;border:1px solid #dce6ee;border-radius:10px}
+.brand strong{color:#191c24}
+.brand span{color:#6b7280;letter-spacing:1px}
+.nav-label{color:#7b8490;padding:0 20px}
+.nav{padding:0 10px}
+.nav button{color:#414955;border-radius:0 24px 24px 0;border-left:3px solid transparent;padding:9px 12px}
+.nav button.active,.nav button:hover{background:#fff;color:#009cff;border-left-color:#009cff}
+.nav button .ico{background:#fff;border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+.side-note{margin:16px 14px 0;background:#fff;color:#697482;border:1px solid #e1e7ed;border-radius:8px}
+.side-note b{color:#273444}
+.topbar{margin:14px 18px 0;border:0;border-radius:15px;background:linear-gradient(90deg,#4f46e5,#6d5dfc);box-shadow:0 10px 25px rgba(79,70,229,.22);color:#fff;padding:0 24px}
+.crumb,.crumb b{color:#fff}
+.demo-tag{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:#fff}
+.role-select{border:0;border-radius:8px}
+.avatar{background:#fff;color:#4f46e5}
+.content{padding:28px 30px 48px;background:#fff}
+.stat,.panel{border-radius:8px;box-shadow:0 3px 14px rgba(25,28,36,.07);border:1px solid #e7ebef}
+.btn-primary{background:#009cff}
+h1,h2{color:#191c24}
+@media(max-width:850px){.shell{grid-template-columns:1fr}.sidebar{border-right:0}.topbar{margin:10px}.content{padding:20px}}
+
+</style>
 </head>
 <body>
 <div class="shell">
@@ -21,11 +50,11 @@ main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var
   <div class="brand"><div class="brand-mark">E</div><div><strong>EduSched</strong><span>School workspace</span></div></div>
   <div><div class="nav-label">Workspace</div><nav class="nav">
     <button class="active" data-page="dashboard"><span class="ico">▦</span>Dashboard</button>
-    <button data-page="schedules"><span class="ico">▤</span>Exam schedules</button>
+    <button data-page="schedules"><span class="ico">▤</span>Schedule</button>
     <button data-page="calendar"><span class="ico">▦</span>Calendar</button>
-    <button data-page="files"><span class="ico">▱</span>Question files</button>
-    <button data-page="users"><span class="ico">♙</span>User management</button>
-    <button data-page="history"><span class="ico">◷</span>Activity history</button>
+    <button data-page="files"><span class="ico">▱</span>Files</button>
+    <button data-page="users"><span class="ico">♙</span>User Management</button>
+    <button data-page="history"><span class="ico">◷</span>History</button>
   </nav></div>
   <div class="side-note"><b>Demo workspace</b>Sample school data only. Changes are stored in this browser and can be reset at any time.</div>
 </aside>
@@ -33,18 +62,18 @@ main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var
 <header class="topbar"><div class="crumb">Workspace / <b id="crumb">Dashboard</b></div><div class="top-actions"><span class="demo-tag">Interactive demo</span><select id="role" class="role-select" aria-label="Preview role"><option value="admin">Administrator view</option><option value="teacher">Teacher view</option></select><div class="avatar" id="avatar">AD</div></div></header>
 <div class="content">
 <section class="page active" id="page-dashboard">
-  <div class="page-head"><div><div class="eyebrow">Overview</div><h1>Good morning, <span id="welcome">Administrator</span></h1><p>Here's what's happening with your exam schedule today.</p></div><button class="btn btn-primary" onclick="openModal()">＋ Create schedule</button></div>
+  <div class="page-head"><div><div class="eyebrow">Overview</div><h1>Tasks Status</h1><p>Here's what's happening with your exam schedule today.</p></div><button class="btn btn-primary" onclick="openModal()">＋ Create schedule</button></div>
   <div class="grid">
     <div class="stat"><div class="stat-top">Total schedules <span class="stat-icon">▤</span></div><strong id="stat-total">12</strong><small>Across all classes</small></div>
     <div class="stat"><div class="stat-top">In progress <span class="stat-icon">◷</span></div><strong id="stat-progress">4</strong><small>Schedules being prepared</small></div>
     <div class="stat"><div class="stat-top">Completed <span class="stat-icon">✓</span></div><strong id="stat-complete">6</strong><small>Marked as completed</small></div>
-    <div class="stat"><div class="stat-top">Question files <span class="stat-icon">▱</span></div><strong id="stat-files">8</strong><small>Sample files in workspace</small></div>
+    <div class="stat"><div class="stat-top">Files <span class="stat-icon">▱</span></div><strong id="stat-files">8</strong><small>Sample files in workspace</small></div>
   </div>
   <div class="notice">This is a browser-only preview. No real school, teacher, student, or exam data is connected.</div>
-  <div class="panel"><div class="panel-head"><div><h2>Recent exam schedules</h2><p>Latest sample activities from your workspace</p></div><button class="btn btn-light" onclick="navigate('schedules')">View all →</button></div><div class="table-wrap"><table><thead><tr><th>Subject / class</th><th>Date</th><th>Teacher</th><th>Status</th></tr></thead><tbody id="recent-table"></tbody></table></div></div>
+  <div class="panel"><div class="panel-head"><div><h2>Schedule Overview</h2><p>Latest sample activities from your workspace</p></div><button class="btn btn-light" onclick="navigate('schedules')">View all →</button></div><div class="table-wrap"><table><thead><tr><th>Subject / class</th><th>Date</th><th>Teacher</th><th>Status</th></tr></thead><tbody id="recent-table"></tbody></table></div></div>
 </section>
 <section class="page" id="page-schedules">
-  <div class="page-head"><div><div class="eyebrow">Academic planning</div><h1>Exam schedules</h1><p>Organize school exams and keep schedules conflict-free.</p></div><button class="btn btn-primary" onclick="openModal()">＋ New schedule</button></div>
+  <div class="page-head"><div><div class="eyebrow">Academic planning</div><h1>Schedule</h1><p>Organize school exams and keep schedules conflict-free.</p></div><button class="btn btn-primary" onclick="openModal()">＋ New schedule</button></div>
   <div class="panel"><div class="filters"><input class="field search" id="schedule-search" placeholder="Search subject, class, teacher…" oninput="renderSchedules()"><select class="field" id="status-filter" onchange="renderSchedules()"><option value="">All statuses</option><option>Not started</option><option>In progress</option><option>Completed</option></select><select class="field" id="class-filter" onchange="renderSchedules()"><option value="">All classes</option><option>7A</option><option>8A</option><option>9B</option><option>10A</option></select></div><div class="table-wrap"><table><thead><tr><th>Schedule</th><th>School</th><th>Date</th><th>Teacher</th><th>Status</th><th>Action</th></tr></thead><tbody id="schedule-table"></tbody></table></div></div>
 </section>
 <section class="page" id="page-calendar">
@@ -52,16 +81,16 @@ main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var
   <div class="panel"><div class="calendar" id="calendar-grid"></div></div>
 </section>
 <section class="page" id="page-files">
-  <div class="page-head"><div><div class="eyebrow">Document center</div><h1>Question files</h1><p>Sample files associated with exam schedules.</p></div><label class="btn btn-primary">＋ Add sample file<input id="file-input" type="file" hidden onchange="addFile(this)"></label></div>
+  <div class="page-head"><div><div class="eyebrow">Document center</div><h1>Files</h1><p>Sample files associated with exam schedules.</p></div><label class="btn btn-primary">＋ Add sample file<input id="file-input" type="file" hidden onchange="addFile(this)"></label></div>
   <div class="notice">File selection is simulated locally. Files are not uploaded to a server.</div>
   <div class="panel"><div class="panel-head"><div><h2>Available files</h2><p>Demo document library</p></div><span class="pill info" id="file-count">8 files</span></div><div class="table-wrap"><table><thead><tr><th>File name</th><th>Linked schedule</th><th>Uploaded by</th><th>Date</th><th>Type</th></tr></thead><tbody id="files-table"></tbody></table></div></div>
 </section>
 <section class="page" id="page-users">
-  <div class="page-head"><div><div class="eyebrow">Access control</div><h1>User management</h1><p>Manage sample administrator and teacher accounts.</p></div><button class="btn btn-primary" onclick="addSampleUser()">＋ Add user</button></div>
+  <div class="page-head"><div><div class="eyebrow">Access control</div><h1>User Management</h1><p>Manage sample administrator and teacher accounts.</p></div><button class="btn btn-primary" onclick="addSampleUser()">＋ Add user</button></div>
   <div class="panel"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Assigned school</th><th>Status</th></tr></thead><tbody id="users-table"></tbody></table></div></div>
 </section>
 <section class="page" id="page-history">
-  <div class="page-head"><div><div class="eyebrow">Audit trail</div><h1>Activity history</h1><p>Track changes made in this sample workspace.</p></div><button class="btn btn-light" onclick="resetDemo()">Reset demo data</button></div>
+  <div class="page-head"><div><div class="eyebrow">Audit trail</div><h1>History</h1><p>Track changes made in this sample workspace.</p></div><button class="btn btn-light" onclick="resetDemo()">Reset demo data</button></div>
   <div class="panel"><div class="table-wrap"><table><thead><tr><th>Activity</th><th>User</th><th>Module</th><th>Time</th></tr></thead><tbody id="history-table"></tbody></table></div></div>
 </section>
 </div>
@@ -106,8 +135,8 @@ function log(a,m){history.unshift([a,document.getElementById('role').value==='ad
 function cycleStatus(id){const s=schedules.find(x=>x.id===id);s.status=s.status==='Not started'?'In progress':s.status==='In progress'?'Completed':'Not started';save();log('Updated '+s.subject+' schedule status','Schedules');render();toast('Schedule status updated')}
 function openModal(){document.getElementById('modal').classList.add('show')}function closeModal(){document.getElementById('modal').classList.remove('show')}
 document.getElementById('schedule-form').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target),v=Object.fromEntries(f.entries());const conflict=schedules.some(s=>s.date===v.date&&s.time===v.time&&(s.teacher===v.teacher||s.room===v.room));if(conflict){toast('Schedule conflict: teacher or room is already booked.');return}const s={...v,id:Date.now(),status:'Not started'};schedules.unshift(s);save();log('Created '+v.subject+' exam schedule','Schedules');closeModal();e.target.reset();render();toast('New schedule saved')});
-function addFile(input){if(!input.files.length)return;const f=input.files[0];files.unshift([f.name,'Unlinked sample file','Current demo user','Today',f.name.split('.').pop().toUpperCase()]);save();log('Added file '+f.name,'Question files');renderFiles();input.value='';toast('File listed locally only')}
-function addSampleUser(){users.push(['New Teacher','teacher.'+(users.length+1),'Teacher','SMP Cendekia']);save();log('Added a sample teacher account','User management');renderUsers();toast('Sample user added')}
+function addFile(input){if(!input.files.length)return;const f=input.files[0];files.unshift([f.name,'Unlinked sample file','Current demo user','Today',f.name.split('.').pop().toUpperCase()]);save();log('Added file '+f.name,'Files');renderFiles();input.value='';toast('File listed locally only')}
+function addSampleUser(){users.push(['New Teacher','teacher.'+(users.length+1),'Teacher','SMP Cendekia']);save();log('Added a sample teacher account','User Management');renderUsers();toast('Sample user added')}
 function resetDemo(){if(!confirm('Reset all EduSched demo changes?'))return;localStorage.removeItem('eduschedSchedules');localStorage.removeItem('eduschedFiles');localStorage.removeItem('eduschedUsers');localStorage.removeItem('eduschedHistory');load();render();toast('Demo data reset')}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
