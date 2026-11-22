@@ -25,6 +25,7 @@ $sekolah = trim((string) ($_POST['sekolah'] ?? ''));
 $kelas   = trim((string) ($_POST['kelas'] ?? ''));
 $mapel   = trim((string) ($_POST['mapel'] ?? ''));
 $pic     = (string) $_SESSION['user_id'];
+$idJadwal = (int) ($_POST['id_jadwal'] ?? 0);
 $mode    = $_POST['mode'] ?? (!empty($_POST['reset']) ? 'reset' : 'update');
 
 if ($sekolah === '' || $kelas === '' || $mapel === '') {
@@ -34,22 +35,42 @@ if ($sekolah === '' || $kelas === '' || $mapel === '') {
     ], 422);
 }
 
+/*
+ * Reset tetap menerima kombinasi sekolah/kelas/mapel karena tombol Reset
+ * lama tidak mengirim id_jadwal.
+ */
 if ($mode === 'reset') {
-    $sql = "
-        UPDATE jadwal_ulangan
-        SET tanggal_ulangan = NULL,
-            status_pekerjaan = 'not_started',
-            detail_ulangan = NULL,
-            user_id = ?
-        WHERE sekolah = ? AND kelas = ? AND mata_pelajaran = ?
-    ";
-
-    $stmt = mysqli_prepare($koneksi, $sql);
-    if (!$stmt) {
-        scheduleJsonResponse(['success' => false, 'message' => 'Query reset gagal disiapkan.'], 500);
+    if ($idJadwal > 0) {
+        $sql = "
+            UPDATE jadwal_ulangan
+            SET tanggal_ulangan = NULL,
+                status_pekerjaan = 'not_started',
+                detail_ulangan = NULL,
+                user_id = ?
+            WHERE id_jadwal = ?
+              AND sekolah = ? AND kelas = ? AND mata_pelajaran = ?
+        ";
+        $stmt = mysqli_prepare($koneksi, $sql);
+        if (!$stmt) {
+            scheduleJsonResponse(['success' => false, 'message' => 'Query reset gagal disiapkan.'], 500);
+        }
+        mysqli_stmt_bind_param($stmt, 'sisss', $pic, $idJadwal, $sekolah, $kelas, $mapel);
+    } else {
+        $sql = "
+            UPDATE jadwal_ulangan
+            SET tanggal_ulangan = NULL,
+                status_pekerjaan = 'not_started',
+                detail_ulangan = NULL,
+                user_id = ?
+            WHERE sekolah = ? AND kelas = ? AND mata_pelajaran = ?
+        ";
+        $stmt = mysqli_prepare($koneksi, $sql);
+        if (!$stmt) {
+            scheduleJsonResponse(['success' => false, 'message' => 'Query reset gagal disiapkan.'], 500);
+        }
+        mysqli_stmt_bind_param($stmt, 'ssss', $pic, $sekolah, $kelas, $mapel);
     }
 
-    mysqli_stmt_bind_param($stmt, 'ssss', $pic, $sekolah, $kelas, $mapel);
     if (!mysqli_stmt_execute($stmt)) {
         $message = mysqli_stmt_error($stmt);
         mysqli_stmt_close($stmt);
@@ -79,47 +100,82 @@ if (!$date || $date->format('Y-m-d') !== $tanggal) {
     scheduleJsonResponse(['success' => false, 'message' => 'Format tanggal tidak valid.'], 422);
 }
 
-$oldQ = mysqli_prepare(
-    $koneksi,
-    "SELECT tanggal_ulangan, status_pekerjaan, detail_ulangan
-     FROM jadwal_ulangan
-     WHERE sekolah = ? AND kelas = ? AND mata_pelajaran = ?
-     LIMIT 1"
-);
+/*
+ * Cari jadwal menggunakan primary key bila tersedia. Sel kosong pada tabel
+ * tidak mempunyai id_jadwal, sehingga pencarian dilanjutkan memakai identitas
+ * sekolah/kelas/mapel.
+ */
+$old = null;
+if ($idJadwal > 0) {
+    $oldQ = mysqli_prepare(
+        $koneksi,
+        "SELECT id_jadwal, tanggal_ulangan, status_pekerjaan, detail_ulangan
+         FROM jadwal_ulangan
+         WHERE id_jadwal = ?
+           AND sekolah = ? AND kelas = ? AND mata_pelajaran = ?
+         LIMIT 1"
+    );
 
-if (!$oldQ) {
-    scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
-}
+    if (!$oldQ) {
+        scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
+    }
 
-mysqli_stmt_bind_param($oldQ, 'sss', $sekolah, $kelas, $mapel);
-if (!mysqli_stmt_execute($oldQ)) {
+    mysqli_stmt_bind_param($oldQ, 'isss', $idJadwal, $sekolah, $kelas, $mapel);
+    if (!mysqli_stmt_execute($oldQ)) {
+        mysqli_stmt_close($oldQ);
+        scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
+    }
+    $oldResult = mysqli_stmt_get_result($oldQ);
+    $old = $oldResult ? mysqli_fetch_assoc($oldResult) : null;
     mysqli_stmt_close($oldQ);
-    scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
 }
-
-$oldResult = mysqli_stmt_get_result($oldQ);
-$old = $oldResult ? mysqli_fetch_assoc($oldResult) : null;
-mysqli_stmt_close($oldQ);
 
 if (!$old) {
-    scheduleJsonResponse(['success' => false, 'message' => 'Jadwal tidak ditemukan. Muat ulang halaman lalu coba lagi.'], 404);
+    $oldQ = mysqli_prepare(
+        $koneksi,
+        "SELECT id_jadwal, tanggal_ulangan, status_pekerjaan, detail_ulangan
+         FROM jadwal_ulangan
+         WHERE sekolah = ? AND kelas = ? AND mata_pelajaran = ?
+         ORDER BY id_jadwal ASC
+         LIMIT 1"
+    );
+
+    if (!$oldQ) {
+        scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
+    }
+
+    mysqli_stmt_bind_param($oldQ, 'sss', $sekolah, $kelas, $mapel);
+    if (!mysqli_stmt_execute($oldQ)) {
+        mysqli_stmt_close($oldQ);
+        scheduleJsonResponse(['success' => false, 'message' => 'Data jadwal gagal diperiksa.'], 500);
+    }
+    $oldResult = mysqli_stmt_get_result($oldQ);
+    $old = $oldResult ? mysqli_fetch_assoc($oldResult) : null;
+    mysqli_stmt_close($oldQ);
 }
+
+$isNewSchedule = !$old;
+$idJadwal = $isNewSchedule ? 0 : (int) $old['id_jadwal'];
 
 // Status selesai hanya sah jika file soal sudah tersedia.
 if ($status === 'completed') {
+    if ($idJadwal < 1) {
+        scheduleJsonResponse([
+            'success' => false,
+            'message' => 'Status Selesai hanya dapat dipilih setelah file soal diunggah.'
+        ], 422);
+    }
+
     $fileQ = mysqli_prepare(
         $koneksi,
-        "SELECT COUNT(*) AS total
-         FROM file_soal f
-         INNER JOIN jadwal_ulangan j ON j.id_jadwal = f.id_jadwal
-         WHERE j.sekolah = ? AND j.kelas = ? AND j.mata_pelajaran = ?"
+        "SELECT COUNT(*) AS total FROM file_soal WHERE id_jadwal = ?"
     );
 
     if (!$fileQ) {
         scheduleJsonResponse(['success' => false, 'message' => 'Status file soal gagal diperiksa.'], 500);
     }
 
-    mysqli_stmt_bind_param($fileQ, 'sss', $sekolah, $kelas, $mapel);
+    mysqli_stmt_bind_param($fileQ, 'i', $idJadwal);
     mysqli_stmt_execute($fileQ);
     $fileResult = mysqli_stmt_get_result($fileQ);
     $fileRow = $fileResult ? mysqli_fetch_assoc($fileResult) : null;
@@ -133,13 +189,65 @@ if ($status === 'completed') {
     }
 }
 
+if ($isNewSchedule) {
+    // Kotak pada matriks belum memiliki baris database: buat jadwal baru.
+    // id_soal merupakan kolom legacy NOT NULL; relasi file menggunakan id_jadwal.
+    $stmt = mysqli_prepare(
+        $koneksi,
+        "INSERT INTO jadwal_ulangan
+            (id_soal, user_id, kelas, mata_pelajaran, status_pekerjaan,
+             detail_ulangan, tanggal_ulangan, sekolah)
+         VALUES ('', ?, ?, ?, ?, ?, ?, ?)"
+    );
+
+    if (!$stmt) {
+        scheduleJsonResponse(['success' => false, 'message' => 'Query pembuatan jadwal gagal disiapkan.'], 500);
+    }
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        'sssssss',
+        $pic,
+        $kelas,
+        $mapel,
+        $status,
+        $detail,
+        $tanggal,
+        $sekolah
+    );
+
+    if (!mysqli_stmt_execute($stmt)) {
+        $message = mysqli_stmt_error($stmt);
+        mysqli_stmt_close($stmt);
+        error_log('EduSched schedule insert failed: ' . $message);
+        scheduleJsonResponse(['success' => false, 'message' => 'Jadwal baru gagal dibuat. Periksa struktur database dan log server.'], 500);
+    }
+
+    $idJadwal = (int) mysqli_insert_id($koneksi);
+    mysqli_stmt_close($stmt);
+
+    log_perubahan(
+        $koneksi,
+        'Schedule',
+        'CREATE',
+        "Membuat jadwal $mapel - $kelas ($sekolah)"
+    );
+
+    scheduleJsonResponse([
+        'success' => true,
+        'id_jadwal' => $idJadwal,
+        'created' => true
+    ]);
+}
+
+// Jadwal telah ada: perbarui berdasarkan primary key.
 $sql = "
     UPDATE jadwal_ulangan
     SET tanggal_ulangan = ?,
         status_pekerjaan = ?,
         detail_ulangan = ?,
         user_id = ?
-    WHERE sekolah = ? AND kelas = ? AND mata_pelajaran = ?
+    WHERE id_jadwal = ?
 ";
 
 $stmt = mysqli_prepare($koneksi, $sql);
@@ -149,14 +257,12 @@ if (!$stmt) {
 
 mysqli_stmt_bind_param(
     $stmt,
-    'sssssss',
+    'ssssi',
     $tanggal,
     $status,
     $detail,
     $pic,
-    $sekolah,
-    $kelas,
-    $mapel
+    $idJadwal
 );
 
 if (!mysqli_stmt_execute($stmt)) {
@@ -186,4 +292,8 @@ if ($changes) {
     log_perubahan($koneksi, 'Schedule', 'UPDATE', $detailLog);
 }
 
-scheduleJsonResponse(['success' => true]);
+scheduleJsonResponse([
+    'success' => true,
+    'id_jadwal' => $idJadwal,
+    'created' => false
+]);
