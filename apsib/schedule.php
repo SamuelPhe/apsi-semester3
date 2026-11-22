@@ -698,6 +698,7 @@ function submitSchedule() {
 let activeCell = null;
 let originalCellData = null;
 let isSaving = false;
+let isResetting = false;
 
 function editCell(td) {
     if (td.querySelector('input')) return;
@@ -901,63 +902,100 @@ function validateUploadAvailability() {
 
 <script>
 function saveCellModal() {
+  const tanggal = cellTanggal.value;
+  const status = cellStatus.value;
 
-  if (!cellTanggal.value || !cellStatus.value) {
+  if (!tanggal || !status) {
     alert('Tanggal dan status wajib diisi');
     return;
   }
 
+  if (!activeCell) {
+    alert('Jadwal yang akan disimpan tidak ditemukan. Tutup modal lalu buka kembali jadwalnya.');
+    return;
+  }
+
+  // Status selesai hanya boleh digunakan setelah file soal tersedia.
+  if (status === 'completed' && activeCell.dataset.hasFile !== '1') {
+    alert('Status "Selesai" hanya dapat dipilih setelah file soal diunggah. Silakan upload file soal terlebih dahulu.');
+    cellStatus.value = 'in_progress';
+    validateUploadAvailability();
+    return;
+  }
+
+  if (isSaving) return;
+
+  const modalEl = document.getElementById('cellModal');
+  const saveButton = modalEl.querySelector('button[onclick="saveCellModal()"]');
+  const username = <?= json_encode(
+    ($_SESSION['username'] ?? '') . ' (' . ($_SESSION['user_id'] ?? '') . ')',
+    JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+  ) ?>;
+
   isSaving = true;
-
-  // ❌ Cegah set completed jika belum upload file
-if (
-  cellStatus.value === 'completed' &&
-  activeCell.dataset.hasFile !== '1'
-) {
-  alert(
-    'Status "Completed" akan otomatis aktif setelah file soal di-upload.'
-  );
-  cellStatus.value = 'in_progress';
-  return;
-}
-
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = 'Menyimpan...';
+  }
 
   fetch('schedule_update_cell.php', {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: new URLSearchParams({
-      sekolah : cellSekolah.value,
-      kelas   : cellKelas.value,
-      mapel   : cellMapel.value,
-      tanggal : cellTanggal.value,
-      status  : cellStatus.value,
-      detail  : cellDetail.value
+      sekolah: cellSekolah.value,
+      kelas: cellKelas.value,
+      mapel: cellMapel.value,
+      tanggal: tanggal,
+      status: status,
+      detail: cellDetail.value
     })
   })
-  .then(r => r.json())
-  .then(r => {
-    if (!r.success) {
-      alert(r.message);
-      isSaving = false;
-      return;
+  .then(async response => {
+    if (response.redirected) {
+      throw new Error('Sesi login tidak berlaku. Muat ulang halaman dan masuk kembali sebelum menyimpan.');
     }
 
-    const username = "<?= $_SESSION['username'].' ('.$_SESSION['user_id'].')' ?>";
+    const raw = await response.text();
+    let result;
 
-    // UPDATE DATASET
-    activeCell.dataset.tanggal = cellTanggal.value;
-    activeCell.dataset.status  = cellStatus.value;
-    activeCell.dataset.detail  = cellDetail.value;
-    activeCell.dataset.pic     = username;
+    try {
+      result = JSON.parse(raw);
+    } catch (error) {
+      console.error('Respons penyimpanan bukan JSON:', response.status, raw);
+      throw new Error('Server mengirim respons yang tidak dapat dibaca (HTTP ' + response.status + '). Periksa sesi login atau log server.');
+    }
 
-    // UPDATE UI
-    activeCell.innerHTML = cellTanggal.value.split('-').reverse().join('-');
+    if (!response.ok && result.success !== false) {
+      throw new Error('Server gagal memproses penyimpanan (HTTP ' + response.status + ').');
+    }
 
+    return result;
+  })
+  .then(result => {
+    if (!result.success) {
+      throw new Error(result.message || 'Data jadwal gagal disimpan.');
+    }
+
+    activeCell.dataset.tanggal = tanggal;
+    activeCell.dataset.status = status;
+    activeCell.dataset.detail = cellDetail.value;
+    activeCell.dataset.pic = username;
+
+    activeCell.innerHTML = tanggal.split('-').reverse().join('-');
     cellPIC.value = username;
 
-    bootstrap.Modal.getInstance(
-      document.getElementById('cellModal')
-    ).hide();
+    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+  })
+  .catch(error => {
+    console.error('Gagal menyimpan detail jadwal:', error);
+    isSaving = false;
+    alert('Gagal menyimpan detail jadwal. ' + (error.message || 'Periksa koneksi dan coba lagi.'));
+  })
+  .finally(() => {
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Simpan';
+    }
   });
 }
 
