@@ -1,0 +1,55 @@
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/${localWorkspaceFolderBasename}:cached
+    depends_on:
+      database:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - "../apsib:/var/www/html"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_HOST: database
+      DB_PORT: "3306"
+      DB_NAME: edusched
+      DB_USER: edusched_local
+      DB_PASSWORD: edusched_codespace_only
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/login.php') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  database:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: edusched
+      MARIADB_USER: edusched_local
+      MARIADB_PASSWORD: edusched_codespace_only
+      MARIADB_ROOT_PASSWORD: edusched_root_codespace_only
+    volumes:
+      - edusched-db-data:/var/lib/mysql
+      - "../apsib/database/schema.sql:/docker-entrypoint-initdb.d/01-edusched-schema.sql:ro"
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping --protocol=tcp -h 127.0.0.1 -uroot -pedusched_root_codespace_only --silent"]
+      start_period: 30s
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  edusched-db-data:

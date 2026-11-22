@@ -58,6 +58,19 @@ The repository now includes a **static browser demo** in [`demo/index.html`](dem
 
 To publish the demo, enable GitHub Pages at **Settings → Pages → Build and deployment → Source: GitHub Actions**, then run **Deploy browser demo** from the Actions tab. After deployment, the public URL will be: https://samuelphe.github.io/apsi-semester3/.
 
+### Open the original PHP application in GitHub Codespaces
+
+The original EduSched PHP/MySQL application can be opened in a private Codespace. This is separate from the static GitHub Pages demo.
+
+1. Open this repository on GitHub.
+2. Select **Code → Codespaces → Create codespace on main** (or resume the existing EduSched Codespace).
+3. Wait for the PHP/Apache and MariaDB services to finish starting.
+4. Open the **Ports** tab in the Codespaces editor.
+5. Find **EduSched web (private)** on port `8080`, then choose **Open in Browser**.
+6. The original login page is available at `/login.php`.
+
+Codespaces imports `apsib/database/schema.sql` into an isolated database named `edusched`. The SQL file contains table definitions only; it does not include user accounts. The login page can be opened immediately, but signing in requires a local `users` record with a valid PHP `password_hash()` password. No demo credentials are provided. Keep port `8080` **Private** and do not use this environment for real school data or exam files.
+
 1. Install PHP with the `mysqli` and `fileinfo` extensions, plus MySQL or MariaDB.
 2. Create a database named `edusched`.
 3. Import [apsib/database/schema.sql](apsib/database/schema.sql).

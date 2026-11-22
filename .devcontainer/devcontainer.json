@@ -1,0 +1,14 @@
+{
+  "name": "EduSched Web — Codespaces",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "EduSched web (private)",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
+  }
+}

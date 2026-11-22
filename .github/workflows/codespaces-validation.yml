@@ -1,0 +1,55 @@
+name: Validate EduSched Codespaces web setup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+      - ".github/workflows/codespaces-validation.yml"
+      - "apsib/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+      - ".github/workflows/codespaces-validation.yml"
+      - "apsib/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Codespaces configuration
+        run: |
+          python3 -c 'import json; json.load(open(".devcontainer/devcontainer.json"))'
+          localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml config -q
+          test -f .devcontainer/php/Dockerfile
+
+      - name: Start web and database services
+        run: |
+          if ! localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml up -d --build --wait --wait-timeout 240; then
+            localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml logs
+            exit 1
+          fi
+
+      - name: Validate PHP pages and database schema
+        run: |
+          localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml exec -T web php -l /var/www/html/login.php
+          localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml exec -T web php -l /var/www/html/koneksi.php
+          localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml exec -T web php -l /var/www/html/cek_login.php
+          page=$(curl --fail --silent --show-error http://127.0.0.1:8080/login.php)
+          printf '%s' "$page" | grep -q 'EduSched'
+          tables=$(localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml exec -T database mariadb -uroot -pedusched_root_codespace_only -N -D edusched -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='edusched'")
+          test "$tables" -eq 4
+          users=$(localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml exec -T web php -r '$db = new mysqli(getenv("DB_HOST"), getenv("DB_USER"), getenv("DB_PASSWORD"), getenv("DB_NAME")); echo $db->query("SELECT COUNT(*) FROM users")->fetch_row()[0];')
+          test "$users" -eq 0
+
+      - name: Stop local services
+        if: always()
+        run: |
+          localWorkspaceFolderBasename=edusched docker compose -f .devcontainer/docker-compose.yml down -v
