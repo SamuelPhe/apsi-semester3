@@ -661,37 +661,69 @@ function openUploadModal() {
 
 function submitSchedule() {
   const sekolah = document.getElementById('namaSekolah').value.trim();
-  const kelas   = parseInt(document.getElementById('jumlahKelas').value);
-  const mapel   = parseInt(document.getElementById('jumlahMapel').value);
+  const kelas = Number.parseInt(document.getElementById('jumlahKelas').value, 10);
+  const mapel = Number.parseInt(document.getElementById('jumlahMapel').value, 10);
 
-  if (!sekolah || kelas < 1 || mapel < 1) {
-    alert('Lengkapi data dulu');
+  if (!sekolah || !Number.isInteger(kelas) || !Number.isInteger(mapel) ||
+      kelas < 1 || kelas > 50 || mapel < 1 || mapel > 50) {
+    alert('Isi nama sekolah dan jumlah kelas serta mata pelajaran antara 1 sampai 50.');
     return;
   }
 
   const formData = new FormData();
   formData.append('action', 'create_schedule');
   formData.append('sekolah', sekolah);
-  formData.append('jumlah_kelas', kelas);
-  formData.append('jumlah_mapel', mapel);
+  formData.append('jumlah_kelas', String(kelas));
+  formData.append('jumlah_mapel', String(mapel));
+
+  const button = document.querySelector('#createScheduleModal button[onclick="submitSchedule()"]');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Menyimpan...';
+  }
 
   fetch('schedule_action.php', {
     method: 'POST',
     body: formData
   })
-  .then(res => res.json())
-  .then(res => {
-    if (res.success) {
-      location.reload(); // refresh → tabel baru muncul
-    } else {
-      alert(res.message || 'Gagal menyimpan jadwal');
+  .then(async response => {
+    if (response.redirected) {
+      throw new Error('Sesi login berakhir. Silakan masuk kembali.');
     }
+
+    const raw = await response.text();
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch (error) {
+      console.error('Respons create schedule bukan JSON:', response.status, raw);
+      throw new Error('Server mengirim respons yang tidak dapat dibaca (HTTP ' + response.status + ').');
+    }
+
+    if (!response.ok && result.success !== false) {
+      throw new Error('Server gagal memproses permintaan (HTTP ' + response.status + ').');
+    }
+
+    return result;
   })
-  .catch(err => {
-    console.error(err);
-    alert('Error server');
+  .then(result => {
+    if (!result.success) {
+      throw new Error(result.message || 'Gagal membuat sekolah.');
+    }
+    location.reload();
+  })
+  .catch(error => {
+    console.error('Gagal membuat sekolah:', error);
+    alert('Gagal membuat sekolah. ' + (error.message || 'Periksa koneksi lalu coba lagi.'));
+  })
+  .finally(() => {
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Simpan Jadwal';
+    }
   });
 }
+
 </script>
 
 <script>
