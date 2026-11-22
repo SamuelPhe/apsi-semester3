@@ -987,7 +987,14 @@ function saveCellModal() {
     activeCell.innerHTML = tanggal.split('-').reverse().join('-');
     cellPIC.value = username;
 
-    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+    // Bootstrap yang dipakai proyek adalah 5.0.0; gunakan getInstance()
+    // karena getOrCreateInstance() belum tersedia pada versi tersebut.
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) {
+      modalInstance.hide();
+    } else {
+      new bootstrap.Modal(modalEl).hide();
+    }
   })
   .catch(error => {
     console.error('Gagal menyimpan detail jadwal:', error);
