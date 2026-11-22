@@ -55,7 +55,9 @@ flowchart TD
 
 ## 5. Demo and local setup
 
-There is currently **no publicly hosted demo**. The application can be explored locally after preparing PHP and the database.
+The repository now includes a **static browser demo** in [`demo/index.html`](demo/index.html). It simulates the main scheduling, calendar, question-file, and user-management workflows with sample data stored in this browser. It does not connect to the original PHP/MySQL application.
+
+To publish the demo, enable GitHub Pages at **Settings → Pages → Build and deployment → Source: GitHub Actions**, then run **Deploy browser demo** from the Actions tab. After deployment, the public URL will be: https://samuelphe.github.io/apsi-semester3/.
 
 1. Install PHP with the `mysqli` and `fileinfo` extensions, plus MySQL or MariaDB.
 2. Create a database named `edusched`.
